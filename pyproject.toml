@@ -1,0 +1,40 @@
+##
+## This file is part of the deploy-wrt project.
+##
+## Copyright (C) 2024 Joel Holdsworth <joel@airwebreathe.org.uk>
+##
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+##
+
+[project]
+name = "deploy-wrt"
+version = "0.1.0"
+requires-python = ">=3.11.0"
+authors = [
+  {name = "Joel Holdsworth", email = "joel@airwebreathe.org.uk"},
+]
+description = "Tool for remote configuration of OpenWRT machines"
+readme = "README.md"
+license = {file = "LICENSE.md"}
+keywords = ["deploy", "openwrt"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python"
+]
+
+[project.urls]
+Repository = "https://github.com/jhol/deploy-wrt.git"
+
+[project.scripts]
+deploy-wrt = "deploy_wrt:main_cli"
