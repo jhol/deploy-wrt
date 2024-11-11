@@ -18,13 +18,15 @@
 ##
 
 { python3 }:
-python3.pkgs.buildPythonApplication {
+with python3.pkgs;
+buildPythonApplication {
   pname = "deploy-wrt";
   version = "0.1.0";
   pyproject = true;
   src = ./.;
 
-  build-system = with python3.pkgs; [ setuptools ];
+  build-system = [ setuptools ];
+  dependencies = [ pyyaml ];
 
   doInstallCheck = true;
 }
