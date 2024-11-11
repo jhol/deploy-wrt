@@ -18,6 +18,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+from dataclasses import dataclass
+import dataclasses as dc
 import logging as lg
 import os
 import os.path as osp
@@ -27,7 +29,21 @@ import sys
 from tempfile import TemporaryDirectory
 
 
-def pull(host, destination, user="root"):
+@dataclass
+class NodeConfig:
+    host: str
+    config_dir: str
+    user: str
+
+
+def _load_node_config(args):
+    return NodeConfig(
+        host=args.HOST,
+        config_dir=args.CONFIG_DIR,
+        user=args.user or 'root')
+
+
+def pull(host, config_dir, user="root"):
     with TemporaryDirectory() as temp_dir:
         ssh_cmd = [
             'ssh',
@@ -42,27 +58,27 @@ def pull(host, destination, user="root"):
 
         tar.wait()
 
-        dest_etc = osp.join(destination, 'etc')
-        os.makedirs(destination, exist_ok=True)
+        dest_etc = osp.join(config_dir, 'etc')
+        os.makedirs(config_dir, exist_ok=True)
         if osp.exists(dest_etc):
             shutil.rmtree(dest_etc)
 
-        shutil.move(osp.join(temp_dir, 'etc'), destination)
+        shutil.move(osp.join(temp_dir, 'etc'), config_dir)
 
         shutil.rmtree(temp_dir)
 
 
 def _pull_cmd(args):
-    pull(args.HOST, args.DEST, args.user)
+    pull(**dc.asdict(_load_node_config(args)))
 
 
-def push(host, source, user="root", reboot=False):
-    if not osp.exists(osp.join(source, 'etc')):
-        raise RuntimeError(f'{source} does not appear to contain OpenWRT configuration')
+def push(host, config_dir, user="root", reboot=False):
+    if not osp.exists(osp.join(config_dir, 'etc')):
+        raise RuntimeError(f'{config_dir} does not appear to contain OpenWRT configuration')
 
     remote_cmd = f'sysupgrade -r -{"; reboot" if reboot else ""}'
 
-    tar_cmd = ['tar', '-C', source, '-czf', '-', 'etc']
+    tar_cmd = ['tar', '-C', config_dir, '-czf', '-', 'etc']
     ssh_cmd = [
         'ssh',
         f'{user}@{host}',
@@ -77,7 +93,7 @@ def push(host, source, user="root", reboot=False):
 
 
 def _push_cmd(args):
-    push(args.HOST, args.SRC, args.user, args.reboot)
+    push(reboot=args.reboot, *dc.asdict(_load_node_config(args)))
 
 
 def main_cli():
@@ -89,15 +105,15 @@ def main_cli():
     subparsers = parser.add_subparsers(dest='command', help="Available commands")
 
     pull = subparsers.add_parser('pull', help="Pull the configuration from a machine")
-    pull.add_argument('-u', '--user', type=str, default='root')
+    pull.add_argument('-u', '--user', type=str)
     pull.add_argument('HOST', type=str, help="Host machine")
-    pull.add_argument('DEST', type=str, help="Destination configuration directory")
+    pull.add_argument('CONFIG_DIR', type=str, help="Destination configuration directory")
     pull.set_defaults(func=_pull_cmd)
 
     push = subparsers.add_parser('push', help="Push the configuration to a machine")
-    push.add_argument('-u', '--user', type=str, default='root')
+    push.add_argument('-u', '--user', type=str)
     push.add_argument('HOST', type=str, help="Host machine")
-    push.add_argument('SRC', type=str, help="Source configuration directory")
+    push.add_argument('CONFIG_DIR', type=str, help="Source configuration directory")
     push.add_argument('-r', '--reboot', action="store_true", help="Reboot machine after import")
     push.set_defaults(func=_push_cmd)
 
