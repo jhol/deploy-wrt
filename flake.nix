@@ -41,6 +41,8 @@
           deploy-wrt = pkgs.callPackage ./default.nix { };
           default = deploy-wrt;
         };
+
+        formatter = pkgs.nixfmt-rfc-style;
       }
     );
 }
