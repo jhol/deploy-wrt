@@ -52,7 +52,7 @@ def pull(host, destination, user="root"):
         shutil.rmtree(temp_dir)
 
 
-def pull_cmd(args):
+def _pull_cmd(args):
     pull(args.HOST, args.DEST, args.user)
 
 
@@ -76,7 +76,7 @@ def push(host, source, user="root", reboot=False):
     ssh.wait()
 
 
-def push_cmd(args):
+def _push_cmd(args):
     push(args.HOST, args.SRC, args.user, args.reboot)
 
 
@@ -92,14 +92,14 @@ def main_cli():
     pull.add_argument('-u', '--user', type=str, default='root')
     pull.add_argument('HOST', type=str, help="Host machine")
     pull.add_argument('DEST', type=str, help="Destination configuration directory")
-    pull.set_defaults(func=pull_cmd)
+    pull.set_defaults(func=_pull_cmd)
 
     push = subparsers.add_parser('push', help="Push the configuration to a machine")
     push.add_argument('--user', '-u', type=str, default='root')
     push.add_argument('HOST', type=str, help="Host machine")
     push.add_argument('SRC', type=str, help="Source configuration directory")
     push.add_argument('-r', '--reboot', action="store_true", help="Reboot machine after import")
-    push.set_defaults(func=push_cmd)
+    push.set_defaults(func=_push_cmd)
 
     args = parser.parse_args()
 
