@@ -46,7 +46,7 @@ def pull(host, destination, user="root"):
         os.makedirs(destination, exist_ok=True)
         if osp.exists(dest_etc):
             shutil.rmtree(dest_etc)
-        
+
         shutil.move(osp.join(temp_dir, 'etc'), destination)
 
         shutil.rmtree(temp_dir)
