@@ -27,6 +27,7 @@ import subprocess as sp
 import shutil
 import sys
 from tempfile import TemporaryDirectory
+import yaml
 
 
 @dataclass
@@ -36,11 +37,30 @@ class NodeConfig:
     user: str
 
 
+class ConfigLoadError(Exception):
+    pass
+
+
 def _load_node_config(args):
+    file_cfg = {}
+    try:
+        with open(args.profile, "r") as f:
+            file_cfg.update(yaml.safe_load(f)[args.HOST])
+
+    except FileNotFoundError:
+        pass
+    except KeyError:
+        raise ConfigLoadError(f'"{args.HOST}" not found in {args.profile}')
+
+    file_config_dir = file_cfg.get('config_dir')
+    if file_config_dir is not None and not osp.isabs(file_config_dir):
+        file_config_dir = osp.join(osp.dirname(osp.abspath(args.profile)), file_config_dir)
+
     return NodeConfig(
-        host=args.HOST,
-        config_dir=args.CONFIG_DIR,
-        user=args.user or 'root')
+        host=file_cfg.get('host') or args.HOST,
+        config_dir=args.config_dir or file_config_dir or args.HOST,
+        user=args.user or file_cfg.get('user') or 'root'
+    )
 
 
 def pull(host, config_dir, user="root"):
@@ -93,7 +113,7 @@ def push(host, config_dir, user="root", reboot=False):
 
 
 def _push_cmd(args):
-    push(reboot=args.reboot, *dc.asdict(_load_node_config(args)))
+    push(reboot=args.reboot, **dc.asdict(_load_node_config(args)))
 
 
 def main_cli():
@@ -101,19 +121,20 @@ def main_cli():
 
     parser = argparse.ArgumentParser(description="Tool for remote configuration of OpenWRT machines")
     parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose logging')
+    parser.add_argument('-P', '--profile', default=".deploy-wrt.yml", help="File to open")
 
     subparsers = parser.add_subparsers(dest='command', help="Available commands")
 
     pull = subparsers.add_parser('pull', help="Pull the configuration from a machine")
-    pull.add_argument('-u', '--user', type=str)
+    pull.add_argument('-u', '--user', type=str, help="SSH user name")
+    pull.add_argument('-d', '--config-dir', type=str, help="Destination configuration directory")
     pull.add_argument('HOST', type=str, help="Host machine")
-    pull.add_argument('CONFIG_DIR', type=str, help="Destination configuration directory")
     pull.set_defaults(func=_pull_cmd)
 
     push = subparsers.add_parser('push', help="Push the configuration to a machine")
-    push.add_argument('-u', '--user', type=str)
+    push.add_argument('-u', '--user', type=str, help="SSH user name")
+    push.add_argument('-d', '--config-dir', type=str, help="Source configuration directory")
     push.add_argument('HOST', type=str, help="Host machine")
-    push.add_argument('CONFIG_DIR', type=str, help="Source configuration directory")
     push.add_argument('-r', '--reboot', action="store_true", help="Reboot machine after import")
     push.set_defaults(func=_push_cmd)
 
