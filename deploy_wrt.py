@@ -95,7 +95,7 @@ def main_cli():
     pull.set_defaults(func=_pull_cmd)
 
     push = subparsers.add_parser('push', help="Push the configuration to a machine")
-    push.add_argument('--user', '-u', type=str, default='root')
+    push.add_argument('-u', '--user', type=str, default='root')
     push.add_argument('HOST', type=str, help="Host machine")
     push.add_argument('SRC', type=str, help="Source configuration directory")
     push.add_argument('-r', '--reboot', action="store_true", help="Reboot machine after import")
