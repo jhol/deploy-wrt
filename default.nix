@@ -17,8 +17,8 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-{ python3
-}: python3.pkgs.buildPythonApplication {
+{ python3 }:
+python3.pkgs.buildPythonApplication {
   pname = "deploy-wrt";
   version = "0.1.0";
   pyproject = true;

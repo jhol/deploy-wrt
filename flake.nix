@@ -21,12 +21,18 @@
   description = "deploy-wrt";
 
   inputs = {
-    nixpkgs.url = github:NixOS/nixpkgs/nixos-24.05;
-    flake-utils.url = github:numtide/flake-utils;
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = import nixpkgs { inherit system; };
       in
@@ -35,5 +41,6 @@
           deploy-wrt = pkgs.callPackage ./default.nix { };
           default = deploy-wrt;
         };
-      });
+      }
+    );
 }
