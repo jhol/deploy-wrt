@@ -69,7 +69,7 @@ def pull(host, config_dir, user="root"):
             'ssh',
             f'{user}@{host}',
             'sysupgrade -k -b -']
-        tar_cmd = ['tar', '-C', temp_dir, '-xzf', '-']
+        tar_cmd = ['tar', '-C', temp_dir, '-xzif', '-']
 
         lg.debug(f"Running: {' '.join(ssh_cmd)} | {' '.join(tar_cmd)}")
 
