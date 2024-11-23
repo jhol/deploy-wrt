@@ -65,16 +65,19 @@ def _load_node_config(args):
 
 def pull(host, config_dir, user="root"):
     with TemporaryDirectory() as temp_dir:
+        # /etc/apk/world is backed up separately until https://github.com/openwrt/openwrt/issues/16947 is resolved
         ssh_cmd = [
             'ssh',
             f'{user}@{host}',
-            'sysupgrade -k -b -']
-        tar_cmd = ['tar', '-C', temp_dir, '-xzif', '-']
+            'sysupgrade -b -; tar -czf - /etc/apk/world']
+        gzip_cmd = ['gzip', '-c', '-d']
+        tar_cmd = ['tar', '-C', temp_dir, '-xif', '-']
 
-        lg.debug(f"Running: {' '.join(ssh_cmd)} | {' '.join(tar_cmd)}")
+        lg.debug(f"Running: {' '.join(ssh_cmd)} | {' '.join(gzip_cmd)} | {' '.join(tar_cmd)}")
 
         ssh = sp.Popen(ssh_cmd, stdout=sp.PIPE)
-        tar = sp.Popen(tar_cmd, stdin=ssh.stdout)
+        gzip = sp.Popen(gzip_cmd, stdin=ssh.stdout, stdout=sp.PIPE)
+        tar = sp.Popen(tar_cmd, stdin=gzip.stdout)
 
         tar.wait()
 
@@ -96,13 +99,20 @@ def push(host, config_dir, user="root", reboot=False):
     if not osp.exists(osp.join(config_dir, 'etc')):
         raise RuntimeError(f'{config_dir} does not appear to contain OpenWRT configuration')
 
-    remote_cmd = f'sysupgrade -r -{"; reboot" if reboot else ""}'
+    remote_cmds = (
+            [
+                'sysupgrade -r -',
+                'apk update',
+                'apk add'
+            ] +
+            (['reboot'] if reboot else [])
+        )
 
     tar_cmd = ['tar', '-C', config_dir, '-czf', '-', 'etc']
     ssh_cmd = [
         'ssh',
         f'{user}@{host}',
-        remote_cmd]
+        ' && '.join(remote_cmds)]
 
     lg.debug(f"Running: {' '.join(tar_cmd)} | {' '.join(ssh_cmd)}")
 
